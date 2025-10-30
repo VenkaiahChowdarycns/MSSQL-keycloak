@@ -16,27 +16,16 @@ from tools.mssql_health import check_health
 
 mcp = FastMCP("MSSQL MCP Server")
 
-# ---- Register as MCP tools (Claude will see these) ----
+
 @mcp.tool()
 def mssql_query_tool(query: str, params: Optional[List[Any]] = None):
     return run_query(query, params)
 
-# @mcp.tool()
-# def mssql_insert_tool(table: str, data: Dict[str, Any]):
-#     return insert_row(table, data)
 
 @mcp.tool()
 def mssql_insert_tool(table: str, data):
     print(f"🟩 Raw data received from MCP: {repr(data)}")
     return insert_row(table, data)
-
-# @mcp.tool()
-# def mssql_update_tool(table: str, data: Dict[str, Any], condition: Dict[str, Any]):
-#     return update_row(table, data, condition)
-
-# @mcp.tool()
-# def mssql_delete_tool(table: str, condition: Dict[str, Any]):
-#     return delete_row(table, condition)
 
 @mcp.tool()
 def mssql_update_tool(table: str, data, condition):
