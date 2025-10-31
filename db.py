@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SERVER = os.getenv("MSSQL_SERVER", "localhost")
-DATABASE = os.getenv("MSSQL_DATABASE", "TestDB")
+SERVER = os.getenv("MSSQL_SERVER", "")
+DATABASE = os.getenv("MSSQL_DATABASE", "")
 USER = os.getenv("MSSQL_USERNAME", "")
 PASSWORD = os.getenv("MSSQL_PASSWORD", "")
-DRIVER = os.getenv("MSSQL_DRIVER", "ODBC Driver 17 for SQL Server")
+DRIVER = os.getenv("MSSQL_DRIVER", "")
 TRUSTED = os.getenv("MSSQL_TRUSTED_CONNECTION", "no").lower() in ("1", "true", "yes")
 
 def build_conn_str():

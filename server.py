@@ -44,6 +44,6 @@ def mssql_health_tool():
     return check_health()
 
 if __name__ == "__main__":
-    print("🚀 Realtime MSSQL MCP Server running at http://127.0.0.1:8080")
+    print("Realtime MSSQL MCP Server running at http://127.0.0.1:8080")
     # Run the MCP server directly
     mcp.run(transport="http", host="127.0.0.1", port=8080)

@@ -17,12 +17,12 @@ def smart_parse_json(data):
         else:
             break
     return data
-
-def update_row(table: str, data: Union[str, Dict[str, Any]], condition: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-    """
+"""
     Updates row(s) in a table based on a condition.
     Accepts both JSON string and dict for MCP compatibility.
     """
+def update_row(table: str, data: Union[str, Dict[str, Any]], condition: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+    
     conn = cursor = None
     try:
         data = smart_parse_json(data)
