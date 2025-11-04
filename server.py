@@ -13,14 +13,26 @@ from tools.mssql_update import update_row
 from tools.mssql_delete import delete_row
 from tools.mssql_schema import get_table_schema
 from tools.mssql_health import check_health
+import json
 
 mcp = FastMCP("MSSQL MCP Server")
 
 
 @mcp.tool()
-def mssql_query_tool(query: str, params: Optional[List[Any]] = None):
+def mssql_query_tool(query: str, params: Any = None):
+    """Execute SQL query with optional params"""
+    # Normalize params if it's a string or None
+    if isinstance(params, str):
+        try:
+            params = json.loads(params)
+        except json.JSONDecodeError:
+            
+            params = [params]
+    elif params is None:
+        params = []
+    elif not isinstance(params, list):
+        params = [params]
     return run_query(query, params)
-
 
 @mcp.tool()
 def mssql_insert_tool(table: str, data):

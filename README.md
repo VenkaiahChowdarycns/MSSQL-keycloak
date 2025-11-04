@@ -56,7 +56,7 @@ mssql-mcp-server/
 │   ├── mssql_update.py
 │   ├── mssql_delete.py
 │   ├── mssql_schema.py
-│   └── mssql_health.py
+│   
 ├── .env
 └── requirements.txt
 ```
@@ -78,7 +78,6 @@ MSSQL_DRIVER=ODBC Driver 17 for SQL Server
 | `query` | Execute any custom SQL query  | `query: str, params: Optional[List[Any]]` |
 | `delete` | Delete records from a table | `table: str, condition: [str, Any]` |
 | `schema` | Retrieve schema of a specific table | `table_name: str` |
-| `health` | Check database connection health | `None`
 
 
 ##  Running the MCP Server 

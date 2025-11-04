@@ -1,6 +1,6 @@
-# tools/mssql_query.py
 from db import get_connection
 from typing import Any, Dict, List, Optional
+import json
 
 def run_query(query: str, params: Optional[List[Any]] = None) -> Dict[str, Any]:
     conn = cursor = None
