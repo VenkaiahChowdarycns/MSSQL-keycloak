@@ -37,8 +37,6 @@ def delete_row(table: str, condition: Union[str, Dict[str, Any]]) -> Dict[str, A
         sql = f"DELETE FROM {table} WHERE {where_clause}"
         values = list(condition.values())
 
-        print(f"✅ SQL: {sql}")
-        print(f"✅ Values: {values}")
 
         cursor.execute(sql, values)
         conn.commit()

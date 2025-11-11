@@ -30,8 +30,7 @@ def insert_row(table: str, data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
         values = list(data.values())
 
         sql = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
-        print(f"💡 SQL: {sql}")
-        print(f"💡 Values: {values}")
+        
 
         cursor.execute(sql, values)
         conn.commit()
