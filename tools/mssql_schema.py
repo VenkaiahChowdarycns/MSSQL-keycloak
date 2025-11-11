@@ -1,8 +1,8 @@
-# tools/mssql_schema.py
 from db import get_connection
 from typing import Dict, Any
 
 def get_table_schema(table_name: str) -> Dict[str, Any]:
+    """Fetch schema information for a specific table."""
     conn = cursor = None
     try:
         conn = get_connection()

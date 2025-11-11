@@ -19,12 +19,7 @@ def smart_parse_json(data):
     return data
 
 def update_row(table: str, data: Union[str, Dict[str, Any]], condition: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Updates row(s) in a table based on a condition.
-    Accepts both JSON string and dict for MCP compatibility.
-    """
-def update_row(table: str, data: Union[str, Dict[str, Any]], condition: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-    
+    """Updates row(s) in a table based on a condition."""
     conn = cursor = None
     try:
         data = smart_parse_json(data)
@@ -41,11 +36,10 @@ def update_row(table: str, data: Union[str, Dict[str, Any]], condition: Union[st
         values = list(data.values()) + list(condition.values())
 
         sql = f"UPDATE {table} SET {set_clause} WHERE {where_clause}"
-        
-
         cursor.execute(sql, values)
         conn.commit()
-        return {"status": "success", "rows_affected": cursor.rowcount}
+
+        return {"status": "success", "action": "update", "table": table, "rows_affected": cursor.rowcount}
 
     except Exception as e:
         return {"status": "error", "message": str(e)}

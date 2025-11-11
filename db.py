@@ -1,5 +1,5 @@
-# db.py
 import os
+import sys
 import pyodbc
 from dotenv import load_dotenv
 
@@ -12,6 +12,10 @@ USER     = os.getenv("MSSQL_USER", "sa")
 PASSWORD = os.getenv("MSSQL_PASSWORD", "")
 DRIVER   = os.getenv("MSSQL_DRIVER", "ODBC Driver 18 for SQL Server")
 ENCRYPT  = os.getenv("MSSQL_ENCRYPT", "yes")
+
+def log_debug(msg):
+    """Logs safely to stderr to avoid breaking MCP JSON output."""
+    print(msg, file=sys.stderr, flush=True)
 
 def build_conn_str():
     return (
@@ -26,6 +30,6 @@ def build_conn_str():
 
 def get_connection(autocommit=True):
     conn_str = build_conn_str()
-    print(f"[DB] Connecting: {conn_str.replace(PASSWORD, '***')}", flush=True)
+    log_debug(f"[DB] Connecting: {conn_str.replace(PASSWORD, '***')}")
     conn = pyodbc.connect(conn_str, autocommit=autocommit)
     return conn

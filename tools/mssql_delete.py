@@ -19,10 +19,7 @@ def smart_parse_json(data):
     return data
 
 def delete_row(table: str, condition: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Deletes row(s) from a table based on a condition.
-    Accepts both JSON string and dict for MCP compatibility.
-    """
+    """Deletes row(s) from a table based on a condition."""
     conn = cursor = None
     try:
         condition = smart_parse_json(condition)
@@ -37,10 +34,10 @@ def delete_row(table: str, condition: Union[str, Dict[str, Any]]) -> Dict[str, A
         sql = f"DELETE FROM {table} WHERE {where_clause}"
         values = list(condition.values())
 
-
         cursor.execute(sql, values)
         conn.commit()
-        return {"status": "success", "rows_affected": cursor.rowcount}
+
+        return {"status": "success", "action": "delete", "table": table, "rows_affected": cursor.rowcount}
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
