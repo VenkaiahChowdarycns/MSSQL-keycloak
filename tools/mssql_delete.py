@@ -3,31 +3,24 @@ from db import get_connection
 from typing import Dict, Any, Union
 
 def smart_parse_json(data):
-    """Aggressively decode escaped JSON up to 5 levels deep."""
     for _ in range(5):
         if isinstance(data, str):
-            data = data.strip()
-            if (data.startswith('"') and data.endswith('"')) or (data.startswith("'") and data.endswith("'")):
-                data = data[1:-1]
-            data = data.replace('\\"', '"').replace("\\'", "'")
             try:
                 data = json.loads(data)
             except json.JSONDecodeError:
-                continue
+                break
         else:
             break
     return data
 
-def delete_row(table: str, condition: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-    """Deletes row(s) from a table based on a condition."""
+def delete_row(table: str, condition: Union[str, Dict[str, Any]], db_key: str = "DB1") -> Dict[str, Any]:
     conn = cursor = None
     try:
         condition = smart_parse_json(condition)
-
         if not isinstance(condition, dict) or not condition:
-            return {"status": "error", "message": "Invalid MCP input — 'condition' must be a JSON object"}
+            return {"status": "error", "message": "'condition' must be a JSON object", "database": db_key}
 
-        conn = get_connection()
+        conn = get_connection(db_key)
         cursor = conn.cursor()
 
         where_clause = " AND ".join([f"[{k}] = ?" for k in condition.keys()])
@@ -37,10 +30,10 @@ def delete_row(table: str, condition: Union[str, Dict[str, Any]]) -> Dict[str, A
         cursor.execute(sql, values)
         conn.commit()
 
-        return {"status": "success", "action": "delete", "table": table, "rows_affected": cursor.rowcount}
+        return {"status": "success", "database": db_key, "action": "delete", "table": table, "rows_affected": cursor.rowcount}
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "database": db_key, "message": str(e)}
     finally:
         try:
             if cursor: cursor.close()

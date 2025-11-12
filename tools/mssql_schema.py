@@ -1,11 +1,10 @@
 from db import get_connection
 from typing import Dict, Any
 
-def get_table_schema(table_name: str) -> Dict[str, Any]:
-    """Fetch schema information for a specific table."""
+def get_table_schema(table_name: str, db_key: str = "DB1") -> Dict[str, Any]:
     conn = cursor = None
     try:
-        conn = get_connection()
+        conn = get_connection(db_key)
         cursor = conn.cursor()
         sql = """
         SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, CHARACTER_MAXIMUM_LENGTH
@@ -14,11 +13,11 @@ def get_table_schema(table_name: str) -> Dict[str, Any]:
         ORDER BY ORDINAL_POSITION
         """
         cursor.execute(sql, table_name)
-        cols = [c[0] for c in cursor.description] if cursor.description else []
+        cols = [c[0] for c in cursor.description]
         rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
-        return {"status": "success", "table": table_name, "columns": rows}
+        return {"status": "success", "database": db_key, "table": table_name, "columns": rows}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "database": db_key, "message": str(e)}
     finally:
         try:
             if cursor: cursor.close()
