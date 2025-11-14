@@ -1,3 +1,8 @@
 fastmcp>=0.2.0
 pyodbc>=5.1.0
 python-dotenv>=1.0.0
+python-jose
+fastapi
+uvicorn
+python-dotenv
+python-keycloak

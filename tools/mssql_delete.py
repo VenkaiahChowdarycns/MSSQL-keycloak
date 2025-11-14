@@ -1,6 +1,10 @@
 import json
+import logging
 from db import get_connection
-from typing import Dict, Any, Union
+from keycloak_integration import get_connection_from_token
+from typing import Dict, Any, Union, Optional
+
+logger = logging.getLogger(__name__)
 
 def smart_parse_json(data):
     for _ in range(5):
@@ -13,14 +17,22 @@ def smart_parse_json(data):
             break
     return data
 
-def delete_row(table: str, condition: Union[str, Dict[str, Any]], db_key: str = "DB1") -> Dict[str, Any]:
+def delete_row(
+    table: str,
+    condition: Union[str, Dict[str, Any]],
+    db_key: str = "DB1",
+    access_token: Optional[str] = None,
+) -> Dict[str, Any]:
     conn = cursor = None
     try:
         condition = smart_parse_json(condition)
         if not isinstance(condition, dict) or not condition:
             return {"status": "error", "message": "'condition' must be a JSON object", "database": db_key}
 
-        conn = get_connection(db_key)
+        if access_token:
+            conn = get_connection_from_token(access_token, db_key)
+        else:
+            conn = get_connection(db_key)
         cursor = conn.cursor()
 
         where_clause = " AND ".join([f"[{k}] = ?" for k in condition.keys()])

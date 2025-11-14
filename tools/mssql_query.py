@@ -1,30 +1,37 @@
+import logging
 from db import get_connection
-from typing import Any, Dict, List, Optional
+from keycloak_integration import get_connection_from_token
 
-def run_query(query: str, params: Optional[List[Any]] = None, db_key: str = "DB1") -> Dict[str, Any]:
-    conn = cursor = None
+logger = logging.getLogger(__name__)
+
+def run_query(query: str, params=None, access_token: str = None):
+    """
+    Execute a SELECT query against MSSQL.
+    If access_token provided, use Keycloak-managed credentials; otherwise use default.
+    """
     try:
-        conn = get_connection(db_key)
+        if access_token:
+            conn = get_connection_from_token(access_token)
+        else:
+            conn = get_connection()
+        
         cursor = conn.cursor()
-
         if params:
             cursor.execute(query, params)
         else:
             cursor.execute(query)
-
-        if cursor.description:
-            cols = [c[0] for c in cursor.description]
-            rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
-            return {"status": "success", "database": db_key, "type": "query", "rows": rows, "count": len(rows)}
-        else:
-            conn.commit()
-            return {"status": "success", "database": db_key, "type": "non_query", "rows_affected": cursor.rowcount}
-
+        
+        # Fetch column names
+        columns = [description[0] for description in cursor.description]
+        rows = cursor.fetchall()
+        
+        result = [dict(zip(columns, row)) for row in rows]
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Query executed successfully, returned {len(result)} rows")
+        return {"success": True, "data": result, "row_count": len(result)}
+    
     except Exception as e:
-        return {"status": "error", "database": db_key, "message": str(e)}
-    finally:
-        try:
-            if cursor: cursor.close()
-            if conn: conn.close()
-        except:
-            pass
+        logger.error(f"Query execution failed: {e}")
+        return {"success": False, "error": str(e)}

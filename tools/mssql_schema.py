@@ -1,26 +1,39 @@
+import logging
 from db import get_connection
-from typing import Dict, Any
+from keycloak_integration import get_connection_from_token
 
-def get_table_schema(table_name: str, db_key: str = "DB1") -> Dict[str, Any]:
-    conn = cursor = None
+logger = logging.getLogger(__name__)
+
+def get_table_schema(table_name: str, access_token: str = None):
+    """
+    Get schema information for an MSSQL table.
+    If access_token provided, use Keycloak-managed credentials; otherwise use default.
+    """
     try:
-        conn = get_connection(db_key)
-        cursor = conn.cursor()
-        sql = """
-        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, CHARACTER_MAXIMUM_LENGTH
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_NAME = ?
-        ORDER BY ORDINAL_POSITION
+        if access_token:
+            conn = get_connection_from_token(access_token)
+        else:
+            conn = get_connection()
+        
+        query = f"""
+            SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = ?
+            ORDER BY ORDINAL_POSITION
         """
-        cursor.execute(sql, table_name)
-        cols = [c[0] for c in cursor.description]
-        rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
-        return {"status": "success", "database": db_key, "table": table_name, "columns": rows}
+        
+        cursor = conn.cursor()
+        cursor.execute(query, (table_name,))
+        columns = [desc[0] for desc in cursor.description]
+        rows = cursor.fetchall()
+        
+        schema = [dict(zip(columns, row)) for row in rows]
+        cursor.close()
+        conn.close()
+        
+        logger.info(f"Schema retrieved for table {table_name}")
+        return {"success": True, "table": table_name, "schema": schema}
+    
     except Exception as e:
-        return {"status": "error", "database": db_key, "message": str(e)}
-    finally:
-        try:
-            if cursor: cursor.close()
-            if conn: conn.close()
-        except:
-            pass
+        logger.error(f"Schema retrieval failed: {e}")
+        return {"success": False, "error": str(e)}

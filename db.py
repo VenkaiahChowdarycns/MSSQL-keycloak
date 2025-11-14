@@ -9,10 +9,10 @@ def log_debug(msg):
     """Logs safely to stderr (so MCP JSON isn't broken)."""
     print(msg, file=sys.stderr, flush=True)
 
-def get_db_config(db_key: str = "DB1"):
+def get_db_config(db_key: str = "DB1", config_overrides: dict = None):
     """Fetch connection settings for the given database key (e.g., DB1, DB2, DB3)."""
     prefix = f"MSSQL_{db_key.upper()}_"
-    return {
+    config = {
         "server": os.getenv("MSSQL_SERVER", "host.docker.internal"),
         "port": os.getenv("MSSQL_PORT", "1433"),
         "database": os.getenv(prefix + "NAME", "master"),
@@ -22,6 +22,9 @@ def get_db_config(db_key: str = "DB1"):
         "encrypt": os.getenv("MSSQL_ENCRYPT", "yes"),
         "trusted": os.getenv("MSSQL_TRUSTED_CONNECTION", "no").lower() in ("1", "true", "yes"),
     }
+    if config_overrides:
+        config.update(config_overrides)
+    return config
 
 def build_conn_str(config: dict):
     return (
@@ -34,11 +37,14 @@ def build_conn_str(config: dict):
         f"Connection Timeout=30;"
     )
 
-def get_connection(db_key: str = "DB1", autocommit=True):
+def get_connection(db_key: str = "DB1", autocommit=True, config_overrides: dict = None, access_token: str = None):
     """Establish connection to a specific MSSQL database (DB1, DB2, DB3...)."""
-    config = get_db_config(db_key)
+    config = get_db_config(db_key, config_overrides)
     conn_str = build_conn_str(config)
     safe_str = conn_str.replace(config["password"], "***")
-    log_debug(f"[DB] Connecting ({db_key}): {safe_str}")
+    if access_token:
+        log_debug(f"[DB] Connecting ({db_key}) with Keycloak user token")
+    else:
+        log_debug(f"[DB] Connecting ({db_key}): {safe_str}")
     conn = pyodbc.connect(conn_str, autocommit=autocommit)
     return conn
