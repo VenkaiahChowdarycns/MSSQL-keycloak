@@ -1,37 +1,42 @@
 import logging
-from db import get_connection
-from keycloak_integration import get_connection_from_token
+from typing import Any, List, Optional, Dict
 
 logger = logging.getLogger(__name__)
 
-def run_query(query: str, params=None, access_token: str = None):
+def run_query(query: str, params: Optional[List[Any]] = None, db_name: str = "default") -> Dict[str, Any]:
     """
-    Execute a SELECT query against MSSQL.
-    If access_token provided, use Keycloak-managed credentials; otherwise use default.
+    Execute a SELECT or arbitrary query against the connection for db_name.
     """
+    from server import get_conn
+
+    conn = None
+    cur = None
     try:
-        if access_token:
-            conn = get_connection_from_token(access_token)
-        else:
-            conn = get_connection()
-        
-        cursor = conn.cursor()
+        conn = get_conn(db_name)
+        cur = conn.cursor()
         if params:
-            cursor.execute(query, params)
+            cur.execute(query, params)
         else:
-            cursor.execute(query)
-        
-        # Fetch column names
-        columns = [description[0] for description in cursor.description]
-        rows = cursor.fetchall()
-        
-        result = [dict(zip(columns, row)) for row in rows]
-        cursor.close()
-        conn.close()
-        
-        logger.info(f"Query executed successfully, returned {len(result)} rows")
-        return {"success": True, "data": result, "row_count": len(result)}
-    
+            cur.execute(query)
+
+        if cur.description:
+            cols = [desc[0] for desc in cur.description]
+            rows = cur.fetchall()
+            data = [dict(zip(cols, row)) for row in rows]
+            return {"status": "success", "row_count": len(data), "data": data}
+        else:
+            return {"status": "success", "message": "Command executed"}
     except Exception as e:
-        logger.error(f"Query execution failed: {e}")
-        return {"success": False, "error": str(e)}
+        logger.exception("Query execution failed")
+        return {"status": "error", "reason": str(e)}
+    finally:
+        try:
+            if cur:
+                cur.close()
+        except Exception:
+            pass
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass

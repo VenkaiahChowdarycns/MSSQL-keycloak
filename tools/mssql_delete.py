@@ -1,8 +1,6 @@
 import json
 import logging
-from db import get_connection
-from keycloak_integration import get_connection_from_token
-from typing import Dict, Any, Union, Optional
+from typing import Dict, Any, Union
 
 logger = logging.getLogger(__name__)
 
@@ -20,35 +18,42 @@ def smart_parse_json(data):
 def delete_row(
     table: str,
     condition: Union[str, Dict[str, Any]],
-    db_key: str = "DB1",
-    access_token: Optional[str] = None,
+    db_name: str = "default",
 ) -> Dict[str, Any]:
-    conn = cursor = None
+    """
+    Delete row(s) from the specified table in the chosen database.
+    """
+    from server import get_conn
+
+    db_conn = cursor = None
     try:
         condition = smart_parse_json(condition)
         if not isinstance(condition, dict) or not condition:
-            return {"status": "error", "message": "'condition' must be a JSON object", "database": db_key}
+            return {"status": "error", "message": "'condition' must be a JSON object"}
 
-        if access_token:
-            conn = get_connection_from_token(access_token, db_key)
-        else:
-            conn = get_connection(db_key)
-        cursor = conn.cursor()
+        db_conn = get_conn(db_name)
+        cursor = db_conn.cursor()
 
         where_clause = " AND ".join([f"[{k}] = ?" for k in condition.keys()])
         sql = f"DELETE FROM {table} WHERE {where_clause}"
         values = list(condition.values())
 
         cursor.execute(sql, values)
-        conn.commit()
+        db_conn.commit()
 
-        return {"status": "success", "database": db_key, "action": "delete", "table": table, "rows_affected": cursor.rowcount}
+        return {"status": "success", "action": "delete", "table": table, "rows_affected": cursor.rowcount}
 
     except Exception as e:
-        return {"status": "error", "database": db_key, "message": str(e)}
+        logger.exception("Delete failed")
+        return {"status": "error", "message": str(e)}
     finally:
         try:
-            if cursor: cursor.close()
-            if conn: conn.close()
+            if cursor:
+                cursor.close()
+        except:
+            pass
+        try:
+            if db_conn:
+                db_conn.close()
         except:
             pass

@@ -1,8 +1,6 @@
 import json
 import logging
-from db import get_connection
-from keycloak_integration import get_connection_from_token
-from typing import Dict, Any, Union, Optional
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,37 +17,36 @@ def smart_parse_json(data):
 
 def insert_row(
     table: str,
-    data: Union[str, Dict[str, Any]],
-    db_key: str = "DB1",
-    access_token: Optional[str] = None,
+    data: Dict[str, Any],
+    db_name: str = "default",
 ) -> Dict[str, Any]:
-    conn = cursor = None
+    """
+    Insert a row into the given table on the specified database (db_name).
+    """
+    from server import get_conn
+
+    conn = None
+    cur = None
     try:
-        data = smart_parse_json(data)
-        if not isinstance(data, dict) or not data:
-            return {"status": "error", "message": "'data' must be a valid JSON object", "database": db_key}
-
-        if access_token:
-            conn = get_connection_from_token(access_token, db_key)
-        else:
-            conn = get_connection(db_key)
-        cursor = conn.cursor()
-
-        cols = ", ".join([f"[{c}]" for c in data.keys()])
-        placeholders = ", ".join(["?"] * len(data))
-        sql = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
-        values = list(data.values())
-
-        cursor.execute(sql, values)
+        conn = get_conn(db_name)
+        columns = ", ".join([f"[{k}]" for k in data.keys()])
+        placeholders = ", ".join(["?" for _ in data])
+        sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
+        cur = conn.cursor()
+        cur.execute(sql, tuple(data.values()))
         conn.commit()
-
-        return {"status": "success", "database": db_key, "action": "insert", "table": table, "rows_affected": cursor.rowcount}
-
+        return {"status": "success", "message": f"Inserted into {table}", "rows_affected": cur.rowcount}
     except Exception as e:
-        return {"status": "error", "database": db_key, "message": str(e)}
+        logger.exception("Insert failed")
+        return {"status": "error", "reason": str(e)}
     finally:
         try:
-            if cursor: cursor.close()
-            if conn: conn.close()
+            if cur:
+                cur.close()
+        except:
+            pass
+        try:
+            if conn:
+                conn.close()
         except:
             pass

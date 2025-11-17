@@ -1,2 +1,11 @@
 .env
+.env.local
+.env.*.local
 myenv
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.vscode/
+.idea/
+*.log
