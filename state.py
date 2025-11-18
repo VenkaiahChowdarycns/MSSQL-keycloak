@@ -1,6 +1,6 @@
-# state.py
-
-# Shared global state for the MCP server
 logged_in_user = None
 ACCESS_TOKEN = None
-DB_CREDS = {}     # { dbname: {... credentials ... } }
+REFRESH_TOKEN = None
+ACCESS_TOKEN_EXPIRES_AT = 0
+REFRESH_TOKEN_EXPIRES_AT = 0
+DB_CREDS = {}

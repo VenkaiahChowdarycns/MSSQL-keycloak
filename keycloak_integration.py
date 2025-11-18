@@ -19,18 +19,60 @@ KEYCLOAK_ADMIN_CLIENT = "admin-cli"
 
 # ------------------ USER TOKEN -------------------------
 def get_token(username, password):
+    """
+    Obtain an access token and refresh token for the given user.
+    Returns a dict with:
+      - access_token
+      - refresh_token
+      - expires_in
+      - refresh_expires_in
+    """
     url = f"{KEYCLOAK_URL}/realms/{REALM}/protocol/openid-connect/token"
     data = {
         "grant_type": "password",
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
         "username": username,
-        "password": password
+        "password": password,
     }
     resp = requests.post(url, data=data)
     resp.raise_for_status()
-    logger.info("🟩 Access token obtained")
-    return resp.json()
+    body = resp.json()
+    logger.info("🟩 Access & refresh tokens obtained")
+    return {
+        "access_token": body["access_token"],
+        "refresh_token": body["refresh_token"],
+        "expires_in": body["expires_in"],
+        "refresh_expires_in": body["refresh_expires_in"],
+    }
+
+
+def refresh_access_token(refresh_token: str):
+    """
+    Use a refresh token to obtain a new access token and refresh token.
+    Returns a dict with:
+      - access_token
+      - refresh_token
+      - expires_in
+      - refresh_expires_in
+    """
+    url = f"{KEYCLOAK_URL}/realms/{REALM}/protocol/openid-connect/token"
+    data = {
+        "grant_type": "refresh_token",
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "refresh_token": refresh_token,
+    }
+    resp = requests.post(url, data=data)
+    resp.raise_for_status()
+    body = resp.json()
+    logger.info("🟩 Access token refreshed")
+    return {
+        "access_token": body["access_token"],
+        "refresh_token": body["refresh_token"],
+        "expires_in": body["expires_in"],
+        "refresh_expires_in": body["refresh_expires_in"],
+    }
 
 
 # ------------------ JWT VERIFY -------------------------
